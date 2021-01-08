@@ -23,7 +23,7 @@ public final class CharacterDamageProcessor {
       Monster attacker = null;
       if (damageFrom != -3 && damageFrom != -4) {
          attacker = MonsterProcessor.getFromUniqueId(monsterUniqueId).join();
-         if (attacker.id() != monsterId) {
+         if (attacker.monsterId() != monsterId) {
             attacker = null;
          }
 
