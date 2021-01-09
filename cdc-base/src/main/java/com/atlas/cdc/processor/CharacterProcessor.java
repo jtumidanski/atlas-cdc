@@ -1,8 +1,5 @@
 package com.atlas.cdc.processor;
 
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-
 import com.app.rest.util.RestResponseUtil;
 import com.atlas.cdc.event.producer.AdjustHealthProducer;
 import com.atlas.cdc.event.producer.AdjustManaProducer;
@@ -12,21 +9,19 @@ import com.atlas.cos.constant.RestConstants;
 import com.atlas.cos.rest.attribute.CharacterAttributes;
 import com.atlas.shared.rest.UriBuilder;
 
-import rest.DataContainer;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public final class CharacterProcessor {
    private CharacterProcessor() {
    }
 
-   public static CompletableFuture<Character> getFromId(int characterId) {
+   public static CompletableFuture<Optional<Character>> getFromId(int characterId) {
       return UriBuilder.service(RestConstants.SERVICE)
             .pathParam("characters", characterId)
             .getAsyncRestClient(CharacterAttributes.class)
             .get()
-            .thenApply(RestResponseUtil::result)
-            .thenApply(DataContainer::data)
-            .thenApply(Optional::get)
-            .thenApply(ModelFactory::createCharacter);
+            .thenApply(RestResponseUtil.data(ModelFactory::createCharacter));
    }
 
    public static void removeItemFromInventory(int characterId, Object type, int itemId, int qty) {

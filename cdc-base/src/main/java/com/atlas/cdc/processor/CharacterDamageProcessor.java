@@ -1,10 +1,5 @@
 package com.atlas.cdc.processor;
 
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 import com.atlas.cdc.event.producer.ShowCharacterDamageProducer;
 import com.atlas.cdc.model.Character;
 import com.atlas.cdc.model.LoseItem;
@@ -12,17 +7,30 @@ import com.atlas.cdc.model.Monster;
 import com.atlas.cdc.model.Skill;
 import com.atlas.cdc.model.SkillEffect;
 
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 public final class CharacterDamageProcessor {
    private CharacterDamageProcessor() {
    }
 
    public static void process(int characterId, int monsterId, int monsterUniqueId, int damage, byte damageFrom, byte element,
                               byte direction) {
-      Character character = CharacterProcessor.getFromId(characterId).join();
+      CharacterProcessor
+            .getFromId(characterId)
+            .join()
+            .ifPresent(character -> withCharacter(character, monsterId, monsterUniqueId, damage, damageFrom, element, direction));
+   }
 
+   protected static void withCharacter(Character character, int monsterId, int monsterUniqueId, int damage, byte damageFrom, byte element, byte direction) {
       Monster attacker = null;
       if (damageFrom != -3 && damageFrom != -4) {
-         attacker = MonsterProcessor.getFromUniqueId(monsterUniqueId).join();
+         attacker = MonsterProcessor
+               .getFromUniqueId(monsterUniqueId)
+               .join()
+               .orElseThrow();
          if (attacker.monsterId() != monsterId) {
             attacker = null;
          }
