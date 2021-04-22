@@ -1,2 +1,2 @@
-# atlas-cdc
-Character Damage Coordinator
+# atlas-bns
+Blocked Name Service
