@@ -5,7 +5,6 @@ import (
 	"atlas-cdc/kafka/producers"
 	_map "atlas-cdc/map"
 	"atlas-cdc/monster"
-	"context"
 	log "github.com/sirupsen/logrus"
 	"math"
 	"math/rand"
@@ -152,7 +151,7 @@ func (p processor) Damage(characterId uint32, monsterId uint32, monsterUniqueId 
 	}
 
 	if attacker != nil {
-		producers.ShowCharacterDamage(p.l, context.Background()).Emit(from, attacker.MonsterId(), c.Id(), attacker.MapId(), damage, fake, direction, false, 0, true, attacker.Id(), 0, 0)
+		producers.ShowCharacterDamage(p.l)(from, attacker.MonsterId(), c.Id(), attacker.MapId(), damage, fake, direction, false, 0, true, attacker.Id(), 0, 0)
 	}
 
 	//      if (GameConstants.isDojo(map.getId())) {

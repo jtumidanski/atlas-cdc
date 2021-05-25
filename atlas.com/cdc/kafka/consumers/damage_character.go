@@ -2,6 +2,7 @@ package consumers
 
 import (
 	"atlas-cdc/damage"
+	"atlas-cdc/kafka/handler"
 	"github.com/sirupsen/logrus"
 )
 
@@ -15,13 +16,13 @@ type damageCharacterCommand struct {
 	Direction       int8   `json:"direction"`
 }
 
-func DamageCharacterCommandCreator() EmptyEventCreator {
+func DamageCharacterCommandCreator() handler.EmptyEventCreator {
 	return func() interface{} {
 		return &damageCharacterCommand{}
 	}
 }
 
-func HandleDamageCharacterCommand() EventProcessor {
+func HandleDamageCharacterCommand() handler.EventHandler {
 	return func(l logrus.FieldLogger, e interface{}) {
 		if event, ok := e.(*damageCharacterCommand); ok {
 			damage.Processor(l).Damage(event.CharacterId, event.MonsterId, event.MonsterUniqueId, event.Damage, event.DamageFrom, event.Element, event.Direction)

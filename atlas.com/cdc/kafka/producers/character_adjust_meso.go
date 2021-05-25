@@ -1,8 +1,7 @@
 package producers
 
 import (
-	"context"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type adjustMesoEvent struct {
@@ -11,19 +10,10 @@ type adjustMesoEvent struct {
 	Show        bool   `json:"bool"`
 }
 
-var AdjustMeso = func(l log.FieldLogger, ctx context.Context) *adjustMeso {
-	return &adjustMeso{
-		l:   l,
-		ctx: ctx,
+func AdjustMeso(l logrus.FieldLogger) func(characterId uint32, amount int32, show bool) {
+	producer := ProduceEvent(l, "TOPIC_ADJUST_MESO")
+	return func(characterId uint32, amount int32, show bool) {
+		event := &adjustMesoEvent{characterId, amount, show}
+		producer(CreateKey(int(characterId)), event)
 	}
-}
-
-type adjustMeso struct {
-	l   log.FieldLogger
-	ctx context.Context
-}
-
-func (e *adjustMeso) Emit(characterId uint32, amount int32, show bool) {
-	event := &adjustMesoEvent{characterId, amount, show}
-	produceEvent(e.l, "TOPIC_ADJUST_MESO", createKey(int(characterId)), event)
 }

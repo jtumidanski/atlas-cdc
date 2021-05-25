@@ -4,7 +4,6 @@ import (
 	"atlas-cdc/kafka/producers"
 	"atlas-cdc/rest/attributes"
 	"atlas-cdc/rest/requests"
-	"context"
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"math"
@@ -98,11 +97,11 @@ func (p processor) HasMagicGuard(characterId uint32) bool {
 }
 
 func (p processor) AdjustHealth(characterId uint32, amount int16) {
-	producers.CharacterAdjustHealth(p.l, context.Background()).Emit(characterId, amount)
+	producers.CharacterAdjustHealth(p.l)(characterId, amount)
 }
 
 func (p processor) AdjustMana(characterId uint32, amount int16) {
-	producers.CharacterAdjustMana(p.l, context.Background()).Emit(characterId, amount)
+	producers.CharacterAdjustMana(p.l)(characterId, amount)
 }
 
 func (p processor) HasMesoGuard(characterId uint32) bool {
@@ -110,7 +109,7 @@ func (p processor) HasMesoGuard(characterId uint32) bool {
 }
 
 func (p processor) AdjustMeso(characterId uint32, amount int32, show bool) {
-	producers.AdjustMeso(p.l, context.Background()).Emit(characterId, amount, show)
+	producers.AdjustMeso(p.l)(characterId, amount, show)
 }
 
 func (p processor) CancelBuff(characterId uint32, buff string) {
