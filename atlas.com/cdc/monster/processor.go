@@ -2,7 +2,6 @@ package monster
 
 import (
 	"atlas-cdc/rest/attributes"
-	"atlas-cdc/rest/requests"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 )
@@ -16,7 +15,7 @@ var Processor = func(l log.FieldLogger) *processor {
 }
 
 func (p processor) GetById(id uint32) (*Model, error) {
-	resp, err := requests.MonsterRegistry().GetById(id)
+	resp, err := requestById(p.l)(id)
 	if err != nil {
 		p.l.WithError(err).Errorf("Retrieving monster %d information.", id)
 		return nil, err

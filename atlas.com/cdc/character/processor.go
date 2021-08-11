@@ -3,7 +3,6 @@ package character
 import (
 	"atlas-cdc/kafka/producers"
 	"atlas-cdc/rest/attributes"
-	"atlas-cdc/rest/requests"
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"math"
@@ -19,7 +18,7 @@ var Processor = func(l log.FieldLogger) *processor {
 }
 
 func (p processor) GetById(characterId uint32) (*Model, error) {
-	cs, err := requests.Character().GetCharacterAttributesById(characterId)
+	cs, err := requestById(p.l)(characterId)
 	if err != nil {
 		return nil, err
 	}
