@@ -3,6 +3,7 @@ package consumers
 import (
 	"atlas-cdc/damage"
 	"atlas-cdc/kafka/handler"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,9 +24,9 @@ func DamageCharacterCommandCreator() handler.EmptyEventCreator {
 }
 
 func HandleDamageCharacterCommand() handler.EventHandler {
-	return func(l logrus.FieldLogger, e interface{}) {
+	return func(l logrus.FieldLogger, span opentracing.Span, e interface{}) {
 		if event, ok := e.(*damageCharacterCommand); ok {
-			damage.Processor(l).Damage(event.CharacterId, event.MonsterId, event.MonsterUniqueId, event.Damage, event.DamageFrom, event.Element, event.Direction)
+			damage.Damage(l, span)(event.CharacterId, event.MonsterId, event.MonsterUniqueId, event.Damage, event.DamageFrom, event.Element, event.Direction)
 		} else {
 			l.Errorf("Unable to cast event provided to handler.")
 		}

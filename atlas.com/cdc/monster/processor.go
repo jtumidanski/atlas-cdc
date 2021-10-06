@@ -2,25 +2,20 @@ package monster
 
 import (
 	"atlas-cdc/rest/attributes"
+	"github.com/opentracing/opentracing-go"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 )
 
-type processor struct {
-	l log.FieldLogger
-}
-
-var Processor = func(l log.FieldLogger) *processor {
-	return &processor{l}
-}
-
-func (p processor) GetById(id uint32) (*Model, error) {
-	resp, err := requestById(p.l)(id)
-	if err != nil {
-		p.l.WithError(err).Errorf("Retrieving monster %d information.", id)
-		return nil, err
+func GetById(l log.FieldLogger, span opentracing.Span) func(id uint32) (*Model, error) {
+	return func(id uint32) (*Model, error) {
+		resp, err := requestById(l, span)(id)
+		if err != nil {
+			l.WithError(err).Errorf("Retrieving monster %d information.", id)
+			return nil, err
+		}
+		return makeMonster(resp.Data()), nil
 	}
-	return makeMonster(resp.Data()), nil
 }
 
 func makeMonster(data *attributes.MonsterData) *Model {
@@ -39,19 +34,23 @@ func makeMonster(data *attributes.MonsterData) *Model {
 	}
 }
 
-func (p processor) IsBuffed(id uint32, buff string) bool {
-	p.l.Warnf("Calling into unimplemented function.")
-	return false
+func IsBuffed(l log.FieldLogger) func(id uint32, buff string) bool {
+	return func(id uint32, buff string) bool {
+		l.Warnf("Calling into unimplemented function.")
+		return false
+	}
 }
 
-func (p processor) IsNeutralized(id uint32) bool {
-	return p.IsBuffed(id, "MonsterStatus.NEUTRALISE")
+func IsNeutralized(l log.FieldLogger) func(id uint32) bool {
+	return func(id uint32) bool {
+		return IsBuffed(l)(id, "MonsterStatus.NEUTRALISE")
+	}
 }
 
-func (p processor) GetLoseItemList(monsterId uint32) ([]*LoseItem, error) {
+func GetLoseItemList(monsterId uint32) ([]*LoseItem, error) {
 	return make([]*LoseItem, 0), nil
 }
 
-func (p processor) DamageMonster(m *Model, characterId uint32, damage int32) {
+func DamageMonster(m *Model, characterId uint32, damage int32) {
 
 }

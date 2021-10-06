@@ -1,6 +1,7 @@
 package producers
 
 import (
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -20,8 +21,8 @@ type showCharacterDamageEvent struct {
 	PG              bool   `json:"pg"`
 }
 
-func ShowCharacterDamage(l logrus.FieldLogger) func(skillId int8, monsterId uint32, characterId uint32, mapId uint32, damage int32, fake uint32, direction int8, pgmr bool, pgmr1 byte, ispg bool, monsterUniqueId uint32, x int16, y int16) {
-	producer := ProduceEvent(l, "TOPIC_SHOW_DAMAGE_CHARACTER_COMMAND")
+func ShowCharacterDamage(l logrus.FieldLogger, span opentracing.Span) func(skillId int8, monsterId uint32, characterId uint32, mapId uint32, damage int32, fake uint32, direction int8, pgmr bool, pgmr1 byte, ispg bool, monsterUniqueId uint32, x int16, y int16) {
+	producer := ProduceEvent(l, span, "TOPIC_SHOW_DAMAGE_CHARACTER_COMMAND")
 	return func(skillId int8, monsterId uint32, characterId uint32, mapId uint32, damage int32, fake uint32, direction int8, pgmr bool, pgmr1 byte, ispg bool, monsterUniqueId uint32, x int16, y int16) {
 		e := &showCharacterDamageEvent{
 			CharacterId:     characterId,

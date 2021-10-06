@@ -4,30 +4,25 @@ import (
 	"atlas-cdc/kafka/producers"
 	"atlas-cdc/rest/attributes"
 	"errors"
+	"github.com/opentracing/opentracing-go"
 	log "github.com/sirupsen/logrus"
 	"math"
 	"strconv"
 )
 
-type processor struct {
-	l log.FieldLogger
-}
+func GetById(l log.FieldLogger, span opentracing.Span) func(characterId uint32) (*Model, error) {
+	return func(characterId uint32) (*Model, error) {
+		cs, err := requestById(l, span)(characterId)
+		if err != nil {
+			return nil, err
+		}
 
-var Processor = func(l log.FieldLogger) *processor {
-	return &processor{l}
-}
-
-func (p processor) GetById(characterId uint32) (*Model, error) {
-	cs, err := requestById(p.l)(characterId)
-	if err != nil {
-		return nil, err
+		ca := makeCharacterAttributes(cs.Data())
+		if ca == nil {
+			return nil, errors.New("unable to make character attributes")
+		}
+		return ca, nil
 	}
-
-	ca := makeCharacterAttributes(cs.Data())
-	if ca == nil {
-		return nil, errors.New("unable to make character attributes")
-	}
-	return ca, nil
 }
 
 func makeCharacterAttributes(data *attributes.CharacterAttributesData) *Model {
@@ -47,78 +42,84 @@ func makeCharacterAttributes(data *attributes.CharacterAttributesData) *Model {
 	}
 }
 
-func (p processor) HasAura(characterId uint32) bool {
-	return p.IsBuffed(characterId, "MapleBuffStat.AURA")
+func HasAura(characterId uint32) bool {
+	return IsBuffed(characterId, "MapleBuffStat.AURA")
 }
 
-func (p processor) IsBuffed(characterId uint32, buff string) bool {
+func IsBuffed(characterId uint32, buff string) bool {
 	return false
 }
 
-func (p processor) GetAmountToDrop(characterId uint32, itemId uint32, max uint32) uint32 {
-	return uint32(math.Min(float64(p.CountItem(characterId, itemId)), float64(max)))
+func GetAmountToDrop(characterId uint32, itemId uint32, max uint32) uint32 {
+	return uint32(math.Min(float64(CountItem(characterId, itemId)), float64(max)))
 }
 
-func (p processor) CountItem(characterId uint32, itemId uint32) uint32 {
+func CountItem(characterId uint32, itemId uint32) uint32 {
 	return 0
 }
 
-func (p processor) RemoveFromInventory(characterId uint32, itemId uint32, quantity uint32) {
+func RemoveFromInventory(characterId uint32, itemId uint32, quantity uint32) {
 
 }
 
-func (p processor) UpdateAriantScore(characterId uint32) {
+func UpdateAriantScore(characterId uint32) {
 
 }
 
-func (p processor) IsHidden(characterId uint32) bool {
+func IsHidden(characterId uint32) bool {
 	return false
 }
 
-func (p processor) HasPowerGuard(characterId uint32) bool {
-	return p.IsBuffed(characterId, "MapleBuffStat.POWER_GUARD")
+func HasPowerGuard(characterId uint32) bool {
+	return IsBuffed(characterId, "MapleBuffStat.POWER_GUARD")
 }
 
-func (p processor) BuffValue(characterId uint32, buff string) float64 {
+func BuffValue(characterId uint32, buff string) float64 {
 	return 0.0
 }
 
-func (p processor) HasBodyPressure(characterId uint32) bool {
-	return p.IsBuffed(characterId, "MapleBuffStat.BODY_PRESSURE")
+func HasBodyPressure(characterId uint32) bool {
+	return IsBuffed(characterId, "MapleBuffStat.BODY_PRESSURE")
 }
 
-func (p processor) HasComboBarrier(characterId uint32) bool {
-	return p.IsBuffed(characterId, "MapleBuffStat.COMBO_BARRIER")
+func HasComboBarrier(characterId uint32) bool {
+	return IsBuffed(characterId, "MapleBuffStat.COMBO_BARRIER")
 }
 
-func (p processor) HasMagicGuard(characterId uint32) bool {
-	return p.IsBuffed(characterId, "MapleBuffStat.MAGIC_GUARD")
+func HasMagicGuard(characterId uint32) bool {
+	return IsBuffed(characterId, "MapleBuffStat.MAGIC_GUARD")
 }
 
-func (p processor) AdjustHealth(characterId uint32, amount int16) {
-	producers.CharacterAdjustHealth(p.l)(characterId, amount)
+func AdjustHealth(l log.FieldLogger, span opentracing.Span) func(characterId uint32, amount int16) {
+	return func(characterId uint32, amount int16) {
+		producers.CharacterAdjustHealth(l, span)(characterId, amount)
+	}
 }
 
-func (p processor) AdjustMana(characterId uint32, amount int16) {
-	producers.CharacterAdjustMana(p.l)(characterId, amount)
+func AdjustMana(l log.FieldLogger, span opentracing.Span) func(characterId uint32, amount int16) {
+	return func(characterId uint32, amount int16) {
+		producers.CharacterAdjustMana(l, span)(characterId, amount)
+	}
 }
 
-func (p processor) HasMesoGuard(characterId uint32) bool {
-	return p.IsBuffed(characterId, "MapleBuffStat.MESO_GUARD")
+func HasMesoGuard(characterId uint32) bool {
+	return IsBuffed(characterId, "MapleBuffStat.MESO_GUARD")
 }
 
-func (p processor) AdjustMeso(characterId uint32, amount int32, show bool) {
-	producers.AdjustMeso(p.l)(characterId, amount, show)
+func AdjustMeso(l log.FieldLogger, span opentracing.Span) func(characterId uint32, amount int32, show bool) {
+	return func(characterId uint32, amount int32, show bool) {
+		producers.AdjustMeso(l, span)(characterId, amount, show)
+	}
 }
 
-func (p processor) CancelBuff(characterId uint32, buff string) {
+func CancelBuff(characterId uint32, buff string) {
 
 }
 
-func (p processor) IsRidingBattleship(characterId uint32) bool {
+func IsRidingBattleship(characterId uint32) bool {
 	return false
 }
 
-func (p processor) AdjustBattleshipHP(characterId uint32, damage int32) {
+func AdjustBattleshipHP(characterId uint32, damage int32) {
 
 }
