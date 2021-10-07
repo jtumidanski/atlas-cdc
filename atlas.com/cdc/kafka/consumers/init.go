@@ -12,10 +12,10 @@ const (
 )
 
 func CreateEventConsumers(l *logrus.Logger, ctx context.Context, wg *sync.WaitGroup) {
-	cec := func(topicToken string, emptyEventCreator handler.EmptyEventCreator, processor handler.EventHandler) {
-		createEventConsumer(l, ctx, wg, DamageCharacterCommand, topicToken, emptyEventCreator, processor)
+	cec := func(topicToken string, name string, emptyEventCreator handler.EmptyEventCreator, processor handler.EventHandler) {
+		createEventConsumer(l, ctx, wg, name, topicToken, emptyEventCreator, processor)
 	}
-	cec("DAMAGE_CHARACTER", DamageCharacterCommandCreator(), HandleDamageCharacterCommand())
+	cec("DAMAGE_CHARACTER", DamageCharacterCommand, DamageCharacterCommandCreator(), HandleDamageCharacterCommand())
 }
 
 func createEventConsumer(l *logrus.Logger, ctx context.Context, wg *sync.WaitGroup, name string, topicToken string, emptyEventCreator handler.EmptyEventCreator, processor handler.EventHandler) {
