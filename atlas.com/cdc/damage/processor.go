@@ -2,7 +2,6 @@ package damage
 
 import (
 	"atlas-cdc/character"
-	"atlas-cdc/kafka/producers"
 	_map "atlas-cdc/map"
 	"atlas-cdc/monster"
 	"github.com/opentracing/opentracing-go"
@@ -145,7 +144,7 @@ func Damage(l log.FieldLogger, span opentracing.Span) func(characterId uint32, m
 		}
 
 		if attacker != nil {
-			producers.ShowCharacterDamage(l, span)(from, attacker.MonsterId(), c.Id(), attacker.MapId(), damage, fake, direction, false, 0, true, attacker.Id(), 0, 0)
+			character.ShowDamage(l, span)(from, attacker.MonsterId(), c.Id(), attacker.MapId(), damage, fake, direction, false, 0, true, attacker.Id(), 0, 0)
 		}
 
 		//      if (GameConstants.isDojo(map.getId())) {

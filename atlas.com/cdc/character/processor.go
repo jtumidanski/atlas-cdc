@@ -1,16 +1,15 @@
 package character
 
 import (
-	"atlas-cdc/kafka/producers"
 	"atlas-cdc/rest/requests"
 	"errors"
 	"github.com/opentracing/opentracing-go"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"math"
 	"strconv"
 )
 
-func GetById(l log.FieldLogger, span opentracing.Span) func(characterId uint32) (*Model, error) {
+func GetById(l logrus.FieldLogger, span opentracing.Span) func(characterId uint32) (*Model, error) {
 	return func(characterId uint32) (*Model, error) {
 		cs, err := requestById(characterId)(l, span)
 		if err != nil {
@@ -90,26 +89,20 @@ func HasMagicGuard(characterId uint32) bool {
 	return IsBuffed(characterId, "MapleBuffStat.MAGIC_GUARD")
 }
 
-func AdjustHealth(l log.FieldLogger, span opentracing.Span) func(characterId uint32, amount int16) {
-	return func(characterId uint32, amount int16) {
-		producers.CharacterAdjustHealth(l, span)(characterId, amount)
-	}
+func AdjustHealth(l logrus.FieldLogger, span opentracing.Span) func(characterId uint32, amount int16) {
+	return emitHealthAdjustment(l, span)
 }
 
-func AdjustMana(l log.FieldLogger, span opentracing.Span) func(characterId uint32, amount int16) {
-	return func(characterId uint32, amount int16) {
-		producers.CharacterAdjustMana(l, span)(characterId, amount)
-	}
+func AdjustMana(l logrus.FieldLogger, span opentracing.Span) func(characterId uint32, amount int16) {
+	return emitManaAdjustment(l, span)
 }
 
 func HasMesoGuard(characterId uint32) bool {
 	return IsBuffed(characterId, "MapleBuffStat.MESO_GUARD")
 }
 
-func AdjustMeso(l log.FieldLogger, span opentracing.Span) func(characterId uint32, amount int32, show bool) {
-	return func(characterId uint32, amount int32, show bool) {
-		producers.AdjustMeso(l, span)(characterId, amount, show)
-	}
+func AdjustMeso(l logrus.FieldLogger, span opentracing.Span) func(characterId uint32, amount int32, show bool) {
+	return emitMesoAdjustment(l, span)
 }
 
 func CancelBuff(characterId uint32, buff string) {
@@ -122,4 +115,8 @@ func IsRidingBattleship(characterId uint32) bool {
 
 func AdjustBattleshipHP(characterId uint32, damage int32) {
 
+}
+
+func ShowDamage(l logrus.FieldLogger, span opentracing.Span) func(skillId int8, monsterId uint32, characterId uint32, mapId uint32, damage int32, fake uint32, direction int8, pgmr bool, pgmr1 byte, ispg bool, monsterUniqueId uint32, x int16, y int16) {
+	return emitShowDamageCommand(l, span)
 }

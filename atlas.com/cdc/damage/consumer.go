@@ -2,7 +2,6 @@ package damage
 
 import (
 	"atlas-cdc/kafka"
-	"atlas-cdc/kafka/consumers"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
@@ -22,8 +21,8 @@ type damageCharacterCommand struct {
 	Direction       int8   `json:"direction"`
 }
 
-func NewConsumer(groupId string) consumers.Config {
-	return consumers.NewConfiguration(consumerName, topicToken, groupId, kafka.Adapt(HandleDamageCharacterCommand()))
+func NewConsumer(groupId string) kafka.ConsumerConfig {
+	return kafka.NewConsumerConfig[damageCharacterCommand](consumerName, topicToken, groupId, HandleDamageCharacterCommand())
 }
 
 func HandleDamageCharacterCommand() kafka.HandlerFunc[damageCharacterCommand] {

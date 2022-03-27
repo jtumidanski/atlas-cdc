@@ -2,7 +2,7 @@ package main
 
 import (
 	"atlas-cdc/damage"
-	"atlas-cdc/kafka/consumers"
+	"atlas-cdc/kafka"
 	"atlas-cdc/logger"
 	"atlas-cdc/tracing"
 	"context"
@@ -34,7 +34,7 @@ func main() {
 		}
 	}(tc)
 
-	consumers.Create(l, ctx, wg,
+	kafka.CreateConsumers(l, ctx, wg,
 		damage.NewConsumer(consumerGroupId))
 
 	// trap sigterm or interrupt and gracefully shutdown the server
