@@ -34,7 +34,7 @@ func main() {
 		}
 	}(tc)
 
-	consumers.CreateEventConsumers(l, ctx, wg,
+	consumers.Create(l, ctx, wg,
 		damage.NewConsumer(consumerGroupId))
 
 	// trap sigterm or interrupt and gracefully shutdown the server

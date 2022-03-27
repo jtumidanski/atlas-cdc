@@ -1,11 +1,9 @@
 package consumers
 
 import (
-	"atlas-cdc/kafka/handler"
 	"atlas-cdc/retry"
 	"atlas-cdc/topic"
 	"context"
-	"encoding/json"
 	"github.com/opentracing/opentracing-go"
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
@@ -15,31 +13,33 @@ import (
 	"time"
 )
 
-func CreateEventConsumers[E any](l *logrus.Logger, ctx context.Context, wg *sync.WaitGroup, configs ...Config[E]) {
+func Create(l *logrus.Logger, ctx context.Context, wg *sync.WaitGroup, configs ...Config) {
 	for _, c := range configs {
-		go NewConsumer(l, ctx, wg, c)
+		go create(l, ctx, wg, c)
 	}
 }
 
-func NewConfiguration[E any](name string, topicToken string, groupId string, handler handler.EventHandler[E]) Config[E] {
-	return Config[E]{
+func NewConfiguration(name string, topicToken string, groupId string, handler MessageHandler) Config {
+	return Config{
 		name:       name,
 		topicToken: topicToken,
 		groupId:    groupId,
-		handler:    handler,
 		maxWait:    500,
+		handler:    handler,
 	}
 }
 
-type Config[E any] struct {
+type Config struct {
 	name       string
 	topicToken string
 	groupId    string
-	handler    handler.EventHandler[E]
 	maxWait    time.Duration
+	handler    MessageHandler
 }
 
-func NewConsumer[E any](cl *logrus.Logger, ctx context.Context, wg *sync.WaitGroup, c Config[E]) {
+type MessageHandler func(l logrus.FieldLogger, span opentracing.Span, msg kafka.Message)
+
+func create(cl *logrus.Logger, ctx context.Context, wg *sync.WaitGroup, c Config) {
 	initSpan := opentracing.StartSpan("consumer_init")
 	t := topic.GetRegistry().Get(cl, initSpan, c.topicToken)
 	initSpan.Finish()
@@ -82,24 +82,18 @@ func NewConsumer[E any](cl *logrus.Logger, ctx context.Context, wg *sync.WaitGro
 				l.WithError(err).Errorf("Could not successfully read message.")
 			} else {
 				l.Infof("Message received %s.", string(msg.Value))
-				var event E
-				err = json.Unmarshal(msg.Value, &event)
-				if err != nil {
-					l.WithError(err).Errorf("Could not unmarshal event into %s.", msg.Value)
-				} else {
-					go func() {
-						headers := make(map[string]string)
-						for _, header := range msg.Headers {
-							headers[header.Key] = string(header.Value)
-						}
+				go func() {
+					headers := make(map[string]string)
+					for _, header := range msg.Headers {
+						headers[header.Key] = string(header.Value)
+					}
 
-						spanContext, _ := opentracing.GlobalTracer().Extract(opentracing.TextMap, opentracing.TextMapCarrier(headers))
-						span := opentracing.StartSpan(c.name, opentracing.FollowsFrom(spanContext))
-						defer span.Finish()
+					spanContext, _ := opentracing.GlobalTracer().Extract(opentracing.TextMap, opentracing.TextMapCarrier(headers))
+					span := opentracing.StartSpan(c.name, opentracing.FollowsFrom(spanContext))
+					defer span.Finish()
 
-						c.handler(l, span, event)
-					}()
-				}
+					c.handler(l, span, msg)
+				}()
 			}
 		}
 	}()
