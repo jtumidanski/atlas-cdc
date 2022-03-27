@@ -1,11 +1,8 @@
 package character
 
 import (
-	"atlas-cdc/rest/attributes"
 	"atlas-cdc/rest/requests"
 	"fmt"
-	"github.com/opentracing/opentracing-go"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -18,13 +15,6 @@ const (
 	characterWeaponDamage              = charactersResource + "%d/damage/weapon"
 )
 
-func requestById(l logrus.FieldLogger, span opentracing.Span) func(characterId uint32) (*attributes.CharacterAttributesDataContainer, error) {
-	return func(characterId uint32) (*attributes.CharacterAttributesDataContainer, error) {
-		ar := &attributes.CharacterAttributesDataContainer{}
-		err := requests.Get(l, span)(fmt.Sprintf(charactersById, characterId), ar)
-		if err != nil {
-			return nil, err
-		}
-		return ar, nil
-	}
+func requestById(characterId uint32) requests.Request[attributes] {
+	return requests.MakeGetRequest[attributes](fmt.Sprintf(charactersById, characterId))
 }

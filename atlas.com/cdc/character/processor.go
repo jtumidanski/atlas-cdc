@@ -2,7 +2,7 @@ package character
 
 import (
 	"atlas-cdc/kafka/producers"
-	"atlas-cdc/rest/attributes"
+	"atlas-cdc/rest/requests"
 	"errors"
 	"github.com/opentracing/opentracing-go"
 	log "github.com/sirupsen/logrus"
@@ -12,7 +12,7 @@ import (
 
 func GetById(l log.FieldLogger, span opentracing.Span) func(characterId uint32) (*Model, error) {
 	return func(characterId uint32) (*Model, error) {
-		cs, err := requestById(l, span)(characterId)
+		cs, err := requestById(characterId)(l, span)
 		if err != nil {
 			return nil, err
 		}
@@ -25,7 +25,7 @@ func GetById(l log.FieldLogger, span opentracing.Span) func(characterId uint32) 
 	}
 }
 
-func makeCharacterAttributes(data *attributes.CharacterAttributesData) *Model {
+func makeCharacterAttributes(data requests.DataBody[attributes]) *Model {
 	cid, err := strconv.ParseUint(data.Id, 10, 32)
 	if err != nil {
 		return nil

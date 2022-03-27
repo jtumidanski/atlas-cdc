@@ -1,7 +1,7 @@
 package monster
 
 import (
-	"atlas-cdc/rest/attributes"
+	"atlas-cdc/rest/requests"
 	"github.com/opentracing/opentracing-go"
 	log "github.com/sirupsen/logrus"
 	"strconv"
@@ -9,7 +9,7 @@ import (
 
 func GetById(l log.FieldLogger, span opentracing.Span) func(id uint32) (*Model, error) {
 	return func(id uint32) (*Model, error) {
-		resp, err := requestById(l, span)(id)
+		resp, err := requestById(id)(l, span)
 		if err != nil {
 			l.WithError(err).Errorf("Retrieving monster %d information.", id)
 			return nil, err
@@ -18,7 +18,7 @@ func GetById(l log.FieldLogger, span opentracing.Span) func(id uint32) (*Model, 
 	}
 }
 
-func makeMonster(data *attributes.MonsterData) *Model {
+func makeMonster(data requests.DataBody[attributes]) *Model {
 	mid, err := strconv.ParseUint(data.Id, 10, 32)
 	if err != nil {
 		return nil
