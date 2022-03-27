@@ -15,31 +15,45 @@ import (
 	"time"
 )
 
-type config struct {
-	maxWait time.Duration
+func CreateEventConsumers[E any](l *logrus.Logger, ctx context.Context, wg *sync.WaitGroup, configs ...Config[E]) {
+	for _, c := range configs {
+		go NewConsumer(l, ctx, wg, c)
+	}
 }
 
-type ConfigOption func(c *config)
-
-func NewConsumer(cl *logrus.Logger, ctx context.Context, wg *sync.WaitGroup, name string, topicToken string, groupId string, ec handler.EmptyEventCreator, h handler.EventHandler, modifications ...ConfigOption) {
-	c := &config{maxWait: 500 * time.Millisecond}
-
-	for _, modification := range modifications {
-		modification(c)
+func NewConfiguration[E any](name string, topicToken string, groupId string, handler handler.EventHandler[E]) Config[E] {
+	return Config[E]{
+		name:       name,
+		topicToken: topicToken,
+		groupId:    groupId,
+		handler:    handler,
+		maxWait:    500,
 	}
+}
 
+type Config[E any] struct {
+	name       string
+	topicToken string
+	groupId    string
+	handler    handler.EventHandler[E]
+	maxWait    time.Duration
+}
+
+func NewConsumer[E any](cl *logrus.Logger, ctx context.Context, wg *sync.WaitGroup, c Config[E]) {
 	initSpan := opentracing.StartSpan("consumer_init")
-	t := topic.GetRegistry().Get(cl, initSpan, topicToken)
+	t := topic.GetRegistry().Get(cl, initSpan, c.topicToken)
 	initSpan.Finish()
 
 	l := cl.WithFields(logrus.Fields{"originator": t, "type": "kafka_consumer"})
 
 	l.Infof("Creating topic consumer.")
 
+	wg.Add(1)
+
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: []string{os.Getenv("BOOTSTRAP_SERVERS")},
 		Topic:   t,
-		GroupID: groupId,
+		GroupID: c.groupId,
 		MaxWait: c.maxWait,
 	})
 
@@ -68,7 +82,7 @@ func NewConsumer(cl *logrus.Logger, ctx context.Context, wg *sync.WaitGroup, nam
 				l.WithError(err).Errorf("Could not successfully read message.")
 			} else {
 				l.Infof("Message received %s.", string(msg.Value))
-				event := ec()
+				var event E
 				err = json.Unmarshal(msg.Value, &event)
 				if err != nil {
 					l.WithError(err).Errorf("Could not unmarshal event into %s.", msg.Value)
@@ -80,10 +94,10 @@ func NewConsumer(cl *logrus.Logger, ctx context.Context, wg *sync.WaitGroup, nam
 						}
 
 						spanContext, _ := opentracing.GlobalTracer().Extract(opentracing.TextMap, opentracing.TextMapCarrier(headers))
-						span := opentracing.StartSpan(name, opentracing.FollowsFrom(spanContext))
+						span := opentracing.StartSpan(c.name, opentracing.FollowsFrom(spanContext))
 						defer span.Finish()
 
-						h(l, span, event)
+						c.handler(l, span, event)
 					}()
 				}
 			}

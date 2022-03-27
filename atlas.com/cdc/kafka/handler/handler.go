@@ -5,6 +5,4 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type EmptyEventCreator func() interface{}
-
-type EventHandler func(logrus.FieldLogger, opentracing.Span, interface{})
+type EventHandler[E any] func(logrus.FieldLogger, opentracing.Span, E)
