@@ -1,37 +1,39 @@
 package monster
 
 import (
+	"atlas-cdc/model"
 	"atlas-cdc/rest/requests"
 	"github.com/opentracing/opentracing-go"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 )
 
-func GetById(l log.FieldLogger, span opentracing.Span) func(id uint32) (*Model, error) {
-	return func(id uint32) (*Model, error) {
-		resp, err := requestById(id)(l, span)
-		if err != nil {
-			l.WithError(err).Errorf("Retrieving monster %d information.", id)
-			return nil, err
-		}
-		return makeMonster(resp.Data()), nil
+func ByIdModelProvider(l log.FieldLogger, span opentracing.Span) func(id uint32) model.Provider[Model] {
+	return func(id uint32) model.Provider[Model] {
+		return requests.Provider[attributes, Model](l, span)(requestById(id), makeModel)
 	}
 }
 
-func makeMonster(data requests.DataBody[attributes]) *Model {
+func GetById(l log.FieldLogger, span opentracing.Span) func(id uint32) (Model, error) {
+	return func(id uint32) (Model, error) {
+		return ByIdModelProvider(l, span)(id)()
+	}
+}
+
+func makeModel(data requests.DataBody[attributes]) (Model, error) {
 	mid, err := strconv.ParseUint(data.Id, 10, 32)
 	if err != nil {
-		return nil
+		return Model{}, nil
 	}
 
 	attr := data.Attributes
-	return &Model{
+	return Model{
 		id:        uint32(mid),
 		worldId:   attr.WorldId,
 		channelId: attr.ChannelId,
 		mapId:     attr.MapId,
 		monsterId: attr.MonsterId,
-	}
+	}, nil
 }
 
 func IsBuffed(l log.FieldLogger) func(id uint32, buff string) bool {

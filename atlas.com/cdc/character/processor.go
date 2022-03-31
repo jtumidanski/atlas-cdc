@@ -1,44 +1,41 @@
 package character
 
 import (
+	"atlas-cdc/model"
 	"atlas-cdc/rest/requests"
-	"errors"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 	"math"
 	"strconv"
 )
 
-func GetById(l logrus.FieldLogger, span opentracing.Span) func(characterId uint32) (*Model, error) {
-	return func(characterId uint32) (*Model, error) {
-		cs, err := requestById(characterId)(l, span)
-		if err != nil {
-			return nil, err
-		}
-
-		ca := makeCharacterAttributes(cs.Data())
-		if ca == nil {
-			return nil, errors.New("unable to make character attributes")
-		}
-		return ca, nil
+func ByIdModelProvider(l logrus.FieldLogger, span opentracing.Span) func(characterId uint32) model.Provider[Model] {
+	return func(characterId uint32) model.Provider[Model] {
+		return requests.Provider[attributes, Model](l, span)(requestById(characterId), makeModel)
 	}
 }
 
-func makeCharacterAttributes(data requests.DataBody[attributes]) *Model {
+func GetById(l logrus.FieldLogger, span opentracing.Span) func(characterId uint32) (Model, error) {
+	return func(characterId uint32) (Model, error) {
+		return ByIdModelProvider(l, span)(characterId)()
+	}
+}
+
+func makeModel(data requests.DataBody[attributes]) (Model, error) {
 	cid, err := strconv.ParseUint(data.Id, 10, 32)
 	if err != nil {
-		return nil
+		return Model{}, err
 	}
 
 	att := data.Attributes
-	return &Model{
+	return Model{
 		id:    uint32(cid),
 		jobId: att.JobId,
 		x:     att.X,
 		y:     att.Y,
 		mp:    att.Mp,
 		meso:  att.Meso,
-	}
+	}, nil
 }
 
 func HasAura(characterId uint32) bool {

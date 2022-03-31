@@ -25,7 +25,7 @@ func Damage(l log.FieldLogger, span opentracing.Span) func(characterId uint32, m
 				l.WithError(err).Errorf("Unable to locate monster %d giving damage.", monsterUniqueId)
 				return
 			}
-			attacker = m
+			attacker = &m
 
 			if attacker.MonsterId() != monsterId {
 				attacker = nil
@@ -156,8 +156,8 @@ func Damage(l log.FieldLogger, span opentracing.Span) func(characterId uint32, m
 	}
 }
 
-func monsterTouchItemLoss(l log.FieldLogger) func(c *character.Model, attacker *monster.Model) {
-	return func(c *character.Model, attacker *monster.Model) {
+func monsterTouchItemLoss(l log.FieldLogger) func(c character.Model, attacker *monster.Model) {
+	return func(c character.Model, attacker *monster.Model) {
 
 		li, err := monster.GetLoseItemList(attacker.MonsterId())
 		if err != nil {
@@ -216,8 +216,8 @@ func removeSelfDestructive(characterId uint32, monsterUniqueId uint32) bool {
 	return true
 }
 
-func adjustDamageForPowerGuard(l log.FieldLogger) func(c *character.Model, m *monster.Model, damage int32) int32 {
-	return func(c *character.Model, m *monster.Model, damage int32) int32 {
+func adjustDamageForPowerGuard(l log.FieldLogger) func(c character.Model, m *monster.Model, damage int32) int32 {
+	return func(c character.Model, m *monster.Model, damage int32) int32 {
 		bv := character.BuffValue(c.Id(), "MapleBuffStat.POWER_GUARD")
 		md := 100
 		if m.IsBoss() {
@@ -233,7 +233,7 @@ func adjustDamageForPowerGuard(l log.FieldLogger) func(c *character.Model, m *mo
 	}
 }
 
-func processBodyPressure(c *character.Model, m *monster.Model) {
+func processBodyPressure(c character.Model, m *monster.Model) {
 	//SkillProcessor.getSkillById(21101003)
 	//.filter(skill -> !MonsterProcessor.isNeutralized(attacker.id()))
 	//.filter(skill -> !attacker.boss())
@@ -247,12 +247,12 @@ func processBodyPressure(c *character.Model, m *monster.Model) {
 	//});
 }
 
-func adjustDamageForComboBarrier(c *character.Model, damage int32) int32 {
+func adjustDamageForComboBarrier(c character.Model, damage int32) int32 {
 	//adjustedDamage *= (cBarrier.getX() / 1000.0);
 	return damage
 }
 
-func adjustDamageForAchilles(c *character.Model, damage int32) int32 {
+func adjustDamageForAchilles(c character.Model, damage int32) int32 {
 	//return SkillProcessor.getSkillById(character.jobId() * 10000 + (character.jobId() == 112 ? 4 : 5))
 	//.map(skill -> {
 	//	int skillLevel = SkillProcessor.getSkillLevel(character.id(), skill.id());
@@ -265,7 +265,7 @@ func adjustDamageForAchilles(c *character.Model, damage int32) int32 {
 	return damage
 }
 
-func adjustDamageForAranHighDefense(c *character.Model, damage int32) int32 {
+func adjustDamageForAranHighDefense(c character.Model, damage int32) int32 {
 	//return SkillProcessor.getSkillById(21120004)
 	//.map(skill -> {
 	//	int skillLevel = SkillProcessor.getSkillLevel(character.id(), skill.id());
